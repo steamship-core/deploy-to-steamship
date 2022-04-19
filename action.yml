@@ -15,18 +15,23 @@ runs:
       with:
         python-version: "3.x"
     - name: Install Virtualenv
+      shell: bash
       run: |
         python3 -m venv .venv
     - name: Activate Virtualenv
+      shell: bash
       run: |
         source .venv/bin/activate
     - name: Install Dependencies
+      shell: bash
       run: |
         python -m pip install -r requirements.txt
     - name: Install Development Dependencies
+      shell: bash
       run: |
         python -m pip install -r requirements.dev.txt
     - name: Run test suite
+      shell: bash
       run: |
         pytest
     - name: Setup Node
@@ -34,11 +39,13 @@ runs:
       with:
         node-version: "14"
     - name: Install Steamship CLI
+      shell: bash
       run: npm install -g @steamship/cli
 
     # Sanity Check:
     #   If the STEAMSHIP_API_KEY variable isn't present, the output of this step will help debug that.
     - name: Test Steamship Authentication
+      shell: bash
       run: ship user:info
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
@@ -46,6 +53,7 @@ runs:
     # Sanity Check:
     #   Tag Version should match Steamship.json version
     - name: Get Tag Versions
+      shell: bash
       id: versions
       run: |
         TAG_VERSION=${GITHUB_REF/refs\/tags\/v/}
@@ -62,6 +70,7 @@ runs:
     # Sanity Check:
     #   Steamship.json type should be plugin or app
     - name: Get the Package Type
+      shell: bash
       id: package_type
       run: |
         PKG_TYPE=`ship project:get type`
@@ -80,6 +89,7 @@ runs:
     # Maybe Deploy the Plugin
     - name: Deploy Plugin
       if: ${{ steps.package_type.outputs.TPE == steps.package_type.outputs.PLG }}
+      shell: bash
       run: ship plugin:deploy
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
@@ -87,6 +97,7 @@ runs:
     # Maybe Deploy the App
     - name: Deploy App
       if: ${{ steps.package_type.outputs.TPE == steps.package_type.outputs.APP }}
+      shell: bash
       run: ship app:deploy
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
