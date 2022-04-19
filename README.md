@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Deploy to Steamship
-        uses: steamship-core/deploy-to-steamship@master
+        uses: steamship-core/deploy-to-steamship@main
         with:
           steamship_key: ${{ secrets.STEAMSHIP_KEY }}
 ```
