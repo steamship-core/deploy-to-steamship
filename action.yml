@@ -4,6 +4,10 @@ inputs:
   steamship_key:  # id of input
     description: 'Steamship API Key'
     required: true
+  steamship_api_base:  # id of input
+    description: 'Steamship API Base'
+    required: false
+    default: 'https://api.steamship.com/api/v1/'
 
 runs:
   using: "composite"
@@ -44,15 +48,32 @@ runs:
 
     # Sanity Check:
     #   If the STEAMSHIP_API_KEY variable isn't present, the output of this step will help debug that.
+    - name: Require Steamship API Key
+      if: ${{ (!(inputs.steamship_key)) }}
+      uses: actions/github-script@v3
+      with:
+        script: |
+            core.setFailed("The required `steamship_key` action input was missing.")
+
+    # Sanity Check:
+    #   If the STEAMSHIP_API_BASE variable isn't present, the output of this step will help debug that.
+    - name: Require Steamship API Base
+      if: ${{ (!(inputs.steamship_api_base)) }}
+      uses: actions/github-script@v3
+      with:
+        script: |
+            core.setFailed("The required `steamship_api_base` action input was missing.")
+
+    # Debug Check:
+    #   Run the `ship user:info` command to log output in GitHub actions that may be helpful debugging a problem.
     - name: Test Steamship Authentication
       shell: bash
       run: ship user:info
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
+        STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
 
-    # Sanity Check:
-    #   Tag Version should match Steamship.json version
-    - name: Get Tag Versions
+    - name: Check Tag Versions
       shell: bash
       id: versions
       run: |
@@ -60,12 +81,24 @@ runs:
         PKG_VERSION=`ship project:get version`
         echo "::set-output name=TAG::$TAG_VERSION"
         echo "::set-output name=PKG::$PKG_VERSION"
-    - name: Fail if the tags aren't equal
-      if: ${{ (!(steps.versions.outputs.TAG == steps.versions.outputs.PKG)) }}
+
+    # Sanity Check:
+    #   Require PKG_VERSION
+    - name: Require Package Version
+      if: ${{ (!(steps.versions.outputs.PKG)) }}
       uses: actions/github-script@v3
       with:
         script: |
-            core.setFailed("The tag version (${{ steps.versions.outputs.TAG }}) and the steamship.json version (${{ steps.versions.outputs.PKG }}) are different.")
+            core.setFailed("Missing a `version` field in `steamship.json` file.")
+
+    # Sanity Check:
+    #   If the user is deploying to a branch tagged vX.Y.Z, then the branch version X.Y.Z must match the steamship.json version.
+    - name: Fail if the tags aren't equal
+      if: ${{ (steps.versions.outputs.TAG && (!(steps.versions.outputs.TAG == steps.versions.outputs.PKG))) }}
+      uses: actions/github-script@v3
+      with:
+        script: |
+            core.setFailed("Deployments to a branch tagged vX.Y.Z must have a matching X.Y.Z version in steamship.json. Branch version (${{ steps.versions.outputs.TAG }}) and the steamship.json version (${{ steps.versions.outputs.PKG }}) are different.")
 
     # Sanity Check:
     #   Steamship.json type should be plugin or app
@@ -93,6 +126,7 @@ runs:
       run: ship plugin:deploy
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
+        STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
 
     # Maybe Deploy the App
     - name: Deploy App
@@ -101,3 +135,4 @@ runs:
       run: ship app:deploy
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
+        STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
