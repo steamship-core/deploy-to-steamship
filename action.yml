@@ -77,7 +77,6 @@ runs:
     - name: install strip-ansi-cli
       run: |
         if [ -z "${{ inputs.contains }}" ]; then
-            echo 🚧 Installing strip-ansi-cli
             npm install --global strip-ansi-cli
         fi
       shell: bash
@@ -97,6 +96,7 @@ runs:
             result=$(echo "PASSED")
         else
             result=$(echo "FAILED")
+        fi
         echo "::set-output name=result::$(echo $result)"
       shell: bash
 
