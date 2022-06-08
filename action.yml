@@ -172,3 +172,6 @@ runs:
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
         STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
+branding:
+    icon: 'upload-cloud'
+    color: 'green'
