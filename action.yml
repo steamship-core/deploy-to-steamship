@@ -94,7 +94,7 @@ runs:
     # Sanity Check:
     #   If the user is deploying to a branch tagged vX.Y.Z, then the branch version X.Y.Z must match the steamship.json version.
     - name: Fail if the tags aren't equal
-      if: ${{ ((!(steps.versions.outputs.TAG == 'refs/heads/staging')) && ((!(steps.versions.outputs.TAG == 'refs/heads/main')) && (!(steps.versions.outputs.TAG == steps.versions.outputs.PKG))) }}
+      if: ${{ ( (!(steps.versions.outputs.TAG == 'refs/heads/staging')) && (!(steps.versions.outputs.TAG == 'refs/heads/main')) && (!(steps.versions.outputs.TAG == steps.versions.outputs.PKG)) ) }}
       uses: actions/github-script@v3
       with:
         script: |
