@@ -1,5 +1,6 @@
 name: Deploy to Steamship
 description: Deploys a Steamship app or plugin.
+
 inputs:
   steamship_key:  # id of input
     description: 'Steamship API Key'
@@ -72,6 +73,41 @@ runs:
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
         STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
+
+    - name: install strip-ansi-cli
+      run: |
+        if [ -z "${{ inputs.contains }}" ]; then
+            echo 🚧 Installing strip-ansi-cli
+            npm install --global strip-ansi-cli
+        fi
+      shell: bash
+
+    - name: Pipe Steamship auth test to output file
+      run: |
+        ship user:info &> user_info.txt || true
+      shell: bash
+      env:
+        STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
+        STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
+
+    - name: Check Steamship auth test for pass
+      id: check_steamship_auth_for_pass
+      run: |
+        if grep -q "Handle:" user_info.txt; then
+            result=$(echo "PASSED")
+        else
+            result=$(echo "FAILED")
+        echo "::set-output name=result::$(echo $result)"
+      shell: bash
+
+    # Sanity Check:
+    #   Require PKG_VERSION
+    - name: Require Package Version
+      if: ${{ (steps.check_steamship_auth_for_pass.outputs.result == 'FAILED') }}
+      uses: actions/github-script@v3
+      with:
+        script: |
+            core.setFailed("Steamship authentication failed. Unable to continue deployment.")
 
     - name: Check Tag Versions
       shell: bash
