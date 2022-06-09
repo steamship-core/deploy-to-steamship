@@ -159,7 +159,8 @@ runs:
     - name: Deploy Plugin
       if: ${{ steps.package_type.outputs.TPE == steps.package_type.outputs.PLG }}
       shell: bash
-      run: ship plugin:deploy
+      run: |
+        ship plugin:deploy &> deployment-results.txt || true
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
         STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
@@ -168,10 +169,20 @@ runs:
     - name: Deploy App
       if: ${{ steps.package_type.outputs.TPE == steps.package_type.outputs.APP }}
       shell: bash
-      run: ship app:deploy
+      run: |
+        ship app:deploy &> deployment-results.txt || true
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
         STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
+
+    - name: Upload Deployment Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-results
+        path: deployment-results.txt
+
+
+
 branding:
     icon: 'upload-cloud'
     color: 'green'
