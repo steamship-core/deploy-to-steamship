@@ -202,7 +202,7 @@ runs:
     - name: Check if should send Slack notification
       id: should_send_slack_notification
       run: |
-         if [[ "${{ secrets.STEAMSHIP_SLACK_DEPLOYMENT_WEBHOOK }}" != "" ]];
+         if [[ "$STEAMSHIP_SLACK_DEPLOYMENT_WEBHOOK" != "" ]];
          then
            echo "::set-output name=send::YES"
          else
@@ -210,6 +210,8 @@ runs:
            echo "::set-output name=send::NO"
          fi
       shell: bash
+      env:
+        STEAMSHIP_SLACK_DEPLOYMENT_WEBHOOK: ${{ secrets.STEAMSHIP_SLACK_DEPLOYMENT_WEBHOOK }}
 
     - name: Send notification to Slack
       id: slack
