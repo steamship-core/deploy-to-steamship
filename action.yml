@@ -13,6 +13,10 @@ inputs:
     description: 'Steamship Slack Notification Webhook'
     required: false
     default: ''
+  test_before_deployment:
+    description: 'Test before deployment? Set to "true" to enable.'
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -41,6 +45,7 @@ runs:
         python -m pip install -r requirements.dev.txt
     - name: Run test suite
       shell: bash
+      if: ${{ ( inputs.test_before_deployment == 'true' ) }}
       run: |
         pytest
     - name: Setup Node
