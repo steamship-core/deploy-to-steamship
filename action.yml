@@ -9,6 +9,10 @@ inputs:
     description: 'Steamship API Base'
     required: false
     default: 'https://api.steamship.com/api/v1/'
+  steamship_slack_notification_webhook:  # id of input
+    description: 'Steamship Slack Notification Webhook'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -211,7 +215,7 @@ runs:
          fi
       shell: bash
       env:
-        STEAMSHIP_SLACK_DEPLOYMENT_WEBHOOK: ${{ secrets.STEAMSHIP_SLACK_DEPLOYMENT_WEBHOOK }}
+        STEAMSHIP_SLACK_DEPLOYMENT_WEBHOOK: ${{ inputs.steamship_slack_notification_webhook }}
 
     - name: Send notification to Slack
       id: slack
