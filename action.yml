@@ -181,7 +181,23 @@ runs:
         name: deployment-results
         path: deployment-results.txt
 
+    - name: Check Steamship deployment for pass
+      id: check_steamship_deployment_for_pass
+      run: |
+        if grep -q "Deployed new" deployment-results.txt; then
+            result=$(echo "PASSED")
+        else
+            result=$(echo "FAILED")
+        fi
+        echo "::set-output name=result::$(echo $result)"
+      shell: bash
 
+    - name: Require Passing Deployment
+      if: ${{ (steps.check_steamship_deployment_for_pass.outputs.result == 'FAILED') }}
+      uses: actions/github-script@v3
+      with:
+        script: |
+            core.setFailed("Steamship deployment failed. Unable to continue deployment. Please see attached deployment-results artifact for logging output.")
 
 branding:
     icon: 'upload-cloud'
