@@ -199,6 +199,33 @@ runs:
         script: |
             core.setFailed("Steamship deployment failed. Unable to continue deployment. Please see attached deployment-results artifact for logging output.")
 
+    - name: Check if should send Slack notification
+      id: should_send_slack_notification
+      run: |
+         if [[ "${{ secrets.STEAMSHIP_SLACK_DEPLOYMENT_WEBHOOK }}" != "" ]];
+         then
+           echo "::set-output name=send::YES"
+         else
+           echo "Secrets to use a container registry were not configured in the repo"
+           echo "::set-output name=send::NO"
+         fi
+      shell: bash
+
+    - name: Send notification to Slack
+      id: slack
+      if: ${{ (steps.should_send_slack_notification.outputs.send == 'YES') }}
+      uses: slackapi/slack-github-action@v1.18.0
+      with:
+        # For posting a rich message using Block Kit
+        payload: |
+          {
+            "text": "Automated ${{ steps.package_type.outputs.TPE }} Deployment ${{ steps.check_steamship_deployment_for_pass.outputs.result }} \n ${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+
 branding:
     icon: 'upload-cloud'
     color: 'green'
