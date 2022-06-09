@@ -228,7 +228,7 @@ runs:
             "text": "Automated ${{ steps.package_type.outputs.TPE }} Deployment ${{ steps.check_steamship_deployment_for_pass.outputs.result }} \n ${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
           }
       env:
-        SLACK_WEBHOOK_URL: ${{ secrets.STEAMSHIP_SLACK_DEPLOYMENT_WEBHOOK }}
+        SLACK_WEBHOOK_URL: ${{ inputs.steamship_slack_notification_webhook }}
         SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
 
