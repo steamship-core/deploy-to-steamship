@@ -17,6 +17,10 @@ inputs:
     description: 'Test before deployment? Set to "true" to enable.'
     required: false
     default: "false"
+  entry_point:
+    description: 'Directory containing code and steamship.json, relative to repository root.'
+    required: false
+    default: '.'
 
 runs:
   using: "composite"
@@ -30,31 +34,31 @@ runs:
     - name: Install Virtualenv
       shell: bash
       run: |
-        python3 -m venv .venv
+        cd ${{ inputs.entry_point }} && python3 -m venv .venv
     - name: Activate Virtualenv
       shell: bash
       run: |
-        source .venv/bin/activate
+        cd ${{ inputs.entry_point }} && source .venv/bin/activate
     - name: Install Dependencies
       shell: bash
       run: |
-        python -m pip install -r requirements.txt
+        cd ${{ inputs.entry_point }} && python -m pip install -r requirements.txt
     - name: Install Development Dependencies
       shell: bash
       run: |
-        python -m pip install -r requirements.dev.txt
+        cd ${{ inputs.entry_point }} && python -m pip install -r requirements.dev.txt
     - name: Run test suite
       shell: bash
       if: ${{ ( inputs.test_before_deployment == 'true' ) }}
       run: |
-        pytest
+        cd ${{ inputs.entry_point }} && pytest
     - name: Setup Node
       uses: actions/setup-node@v3
       with:
         node-version: "14"
     - name: Install Steamship CLI
       shell: bash
-      run: npm install -g @steamship/cli
+      run: cd ${{ inputs.entry_point }} && npm install -g @steamship/cli
 
     # Sanity Check:
     #   If the STEAMSHIP_API_KEY variable isn't present, the output of this step will help debug that.
@@ -78,7 +82,7 @@ runs:
     #   Run the `ship user:info` command to log output in GitHub actions that may be helpful debugging a problem.
     - name: Test Steamship Authentication
       shell: bash
-      run: ship user:info
+      run: cd ${{ inputs.entry_point }} && ship user:info
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
         STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
@@ -86,13 +90,13 @@ runs:
     - name: install strip-ansi-cli
       run: |
         if [ -z "${{ inputs.contains }}" ]; then
-            npm install --global strip-ansi-cli
+            cd ${{ inputs.entry_point }} && npm install --global strip-ansi-cli
         fi
       shell: bash
 
     - name: Pipe Steamship auth test to output file
       run: |
-        ship user:info &> user_info.txt || true
+        cd ${{ inputs.entry_point }} && ship user:info &> user_info.txt || true
       shell: bash
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
@@ -101,6 +105,7 @@ runs:
     - name: Check Steamship auth test for pass
       id: check_steamship_auth_for_pass
       run: |
+        cd ${{ inputs.entry_point }} && 
         if grep -q "Handle:" user_info.txt; then
             result=$(echo "PASSED")
         else
@@ -122,6 +127,7 @@ runs:
       shell: bash
       id: versions
       run: |
+        cd ${{ inputs.entry_point }} && 
         TAG_VERSION=${GITHUB_REF/refs\/tags\/v/}
         PKG_VERSION=`ship project:get version`
         echo "::set-output name=TAG::$TAG_VERSION"
@@ -151,6 +157,7 @@ runs:
       shell: bash
       id: package_type
       run: |
+        cd ${{ inputs.entry_point }} && 
         PKG_TYPE=`ship project:get type`
         TYPE_PLG=plugin
         TYPE_APP=app
@@ -169,6 +176,7 @@ runs:
       if: ${{ steps.package_type.outputs.TPE == steps.package_type.outputs.PLG }}
       shell: bash
       run: |
+        cd ${{ inputs.entry_point }} && 
         ship plugin:deploy &> deployment-results.txt || true
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
@@ -179,6 +187,7 @@ runs:
       if: ${{ steps.package_type.outputs.TPE == steps.package_type.outputs.APP }}
       shell: bash
       run: |
+        cd ${{ inputs.entry_point }} && 
         ship app:deploy &> deployment-results.txt || true
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
@@ -188,12 +197,12 @@ runs:
       uses: actions/upload-artifact@v3
       with:
         name: deployment-results
-        path: deployment-results.txt
+        path: ${{ inputs.entry_point }}/deployment-results.txt
 
     - name: Check Steamship deployment for pass
       id: check_steamship_deployment_for_pass
       run: |
-        if grep -q "Deployed new" deployment-results.txt; then
+        if grep -q "Deployed new" ${{ inputs.entry_point }}/deployment-results.txt; then
             result=$(echo "PASSED")
         else
             result=$(echo "FAILED")
