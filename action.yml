@@ -151,44 +151,12 @@ runs:
         script: |
             core.setFailed("Deployments to a branch tagged vX.Y.Z must have a matching X.Y.Z version in steamship.json. Branch version (${{ steps.versions.outputs.TAG }}) and the steamship.json version (${{ steps.versions.outputs.PKG }}) are different.")
 
-    # Sanity Check:
-    #   Steamship.json type should be plugin or app
-    - name: Get the Package Type
-      shell: bash
-      id: package_type
-      run: |
-        cd ${{ inputs.entry_point }} && 
-        PKG_TYPE=`ship project:get type`
-        TYPE_PLG=plugin
-        TYPE_APP=app
-        echo "::set-output name=TPE::$PKG_TYPE"
-        echo "::set-output name=PLG::$TYPE_PLG"
-        echo "::set-output name=APP::$TYPE_APP"
-    - name: Require valid type
-      if: ${{ (!((steps.package_type.outputs.TPE == steps.package_type.outputs.PLG) || (steps.package_type.outputs.TPE == steps.package_type.outputs.APP))) }}
-      uses: actions/github-script@v3
-      with:
-        script: |
-            core.setFailed("The package type (${{ steps.package_type.outputs.TPE }}) must be 'plugin' or 'app' to deploy via this action.")
-
-    # Maybe Deploy the Plugin
-    - name: Deploy Plugin
-      if: ${{ steps.package_type.outputs.TPE == steps.package_type.outputs.PLG }}
+    # Deploy the package
+    - name: Deploy Package
       shell: bash
       run: |
         cd ${{ inputs.entry_point }} && 
-        ship plugin:deploy &> deployment-results.txt || true
-      env:
-        STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
-        STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
-
-    # Maybe Deploy the App
-    - name: Deploy App
-      if: ${{ steps.package_type.outputs.TPE == steps.package_type.outputs.APP }}
-      shell: bash
-      run: |
-        cd ${{ inputs.entry_point }} && 
-        ship app:deploy &> deployment-results.txt || true
+        ship deploy &> deployment-results.txt || true
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
         STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
