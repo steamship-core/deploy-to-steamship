@@ -1,5 +1,5 @@
 name: Deploy to Steamship
-description: Deploys a Steamship app or plugin.
+description: Deploys a Steamship package or plugin.
 
 inputs:
   steamship_key:  # id of input
@@ -146,23 +146,23 @@ runs:
             core.setFailed("Deployments to a branch tagged vX.Y.Z must have a matching X.Y.Z version in steamship.json. Branch version (${{ steps.versions.outputs.TAG }}) and the steamship.json version (${{ steps.versions.outputs.PKG }}) are different.")
 
     # Sanity Check:
-    #   Steamship.json type should be plugin or app
+    #   Steamship.json type should be plugin or package
     - name: Get the Package Type
       shell: bash
       id: package_type
       run: |
         PKG_TYPE=`ship project:get type`
         TYPE_PLG=plugin
-        TYPE_APP=app
+        TYPE_PKG=package
         echo "::set-output name=TPE::$PKG_TYPE"
         echo "::set-output name=PLG::$TYPE_PLG"
-        echo "::set-output name=APP::$TYPE_APP"
+        echo "::set-output name=PKG::$TYPE_PKG"
     - name: Require valid type
-      if: ${{ (!((steps.package_type.outputs.TPE == steps.package_type.outputs.PLG) || (steps.package_type.outputs.TPE == steps.package_type.outputs.APP))) }}
+      if: ${{ (!((steps.package_type.outputs.TPE == steps.package_type.outputs.PLG) || (steps.package_type.outputs.TPE == steps.package_type.outputs.PKG))) }}
       uses: actions/github-script@v3
       with:
         script: |
-            core.setFailed("The package type (${{ steps.package_type.outputs.TPE }}) must be 'plugin' or 'app' to deploy via this action.")
+            core.setFailed("The package type (${{ steps.package_type.outputs.TPE }}) must be 'plugin' or 'package' to deploy via this action.")
 
     # Maybe Deploy the Plugin
     - name: Deploy Plugin
@@ -174,12 +174,12 @@ runs:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
         STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
 
-    # Maybe Deploy the App
-    - name: Deploy App
-      if: ${{ steps.package_type.outputs.TPE == steps.package_type.outputs.APP }}
+    # Maybe Deploy the Package
+    - name: Deploy Package
+      if: ${{ steps.package_type.outputs.TPE == steps.package_type.outputs.PKG }}
       shell: bash
       run: |
-        ship app:deploy &> deployment-results.txt || true
+        ship deploy &> deployment-results.txt || true
       env:
         STEAMSHIP_API_KEY: ${{ inputs.steamship_key }}
         STEAMSHIP_API_BASE: ${{ inputs.steamship_api_base }}
@@ -194,9 +194,11 @@ runs:
       id: check_steamship_deployment_for_pass
       run: |
         if grep -q "Deployed new" deployment-results.txt; then
-            result=$(echo "PASSED")
+            result=$(echo "Deployment successful")
         else
-            result=$(echo "FAILED")
+            result=$(echo "Deployment failed")
+            cat ./deployment-results.txt
+            echo "EOF (deployment-results.txt)"
         fi
         echo "::set-output name=result::$(echo $result)"
       shell: bash
