@@ -5,7 +5,7 @@ This GitHub Action template will deploy your repository's Steamship App or Plugi
 The deployment script contains the following sanity checks:
 
 * That your `steamship.json` project file exists
-* That your project has a `type` of either `app` or `plugin`
+* That your project has a `type` of either `package` or `plugin`
 
 Along with the following QA checks:
 
